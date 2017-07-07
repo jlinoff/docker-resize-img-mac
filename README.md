@@ -35,5 +35,6 @@ Format specific information:
 Here is how you download it.
 
 ```bash
-$ git clone 
+$ git clone https://github.com/jlinoff/docker-resize-img-mac.git
+$ cp docker-resize-img-mac/docker-resize-img-mac.sh ~/bin/
 ```
