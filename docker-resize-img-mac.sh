@@ -27,7 +27,7 @@ DESCRIPTION
     current size.
 
     If you do not specify any images, it will delete all of
-    the images.
+    the images and resize the container.
 
 OPTION
     -h, --help      This help message.
