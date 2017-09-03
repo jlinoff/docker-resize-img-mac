@@ -1,3 +1,5 @@
+[![Releases](https://img.shields.io/github/release/jlinoff/docker-resize-img-mac.svg?style=flat)](https://github.com/jlinoff/docker-resize-img-mac/releases)
+
 # docker-resize-img-mac
 Resize the Docker.qcow2 image on the Mac.
 
