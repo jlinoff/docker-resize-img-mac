@@ -6,6 +6,7 @@ Resize the Docker.qcow2 image on the Mac.
 This tool resizes your docker image store on the mac keeping only the images that you specify.
 
 It is useful because the docker image store doesn't grow automatically which can cause you to run out of space.
+> This no longer appears to be true. Recently my image repository grew to over 700GB under docker 17.06. When I deleted almost all of the images, it did not shrink.
 
 If you do not specify an image size, it will double the current size.
 
@@ -18,6 +19,14 @@ Here is how you use this tool.
 ```bash
 $ docker-resize-img-mac.sh -s 194G img1 img2 img3
 ```
+
+Here is how I used the tool resize the image repository for all of my images.
+
+```bash
+$ ./docker-resize-img-mac.sh -s 120G $(docker images | tail +2 | awk '{printf("%s:%s\n",$1,$2)}')
+```
+
+After running it, the docker.qcow2 image was reduced signficantly. Apparently there is a lot of wasted space.
 
 To see the updated image information.
 ```bash
