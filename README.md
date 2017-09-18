@@ -6,7 +6,7 @@ Resize the Docker.qcow2 image on the Mac.
 This tool resizes your docker image store on the mac keeping only the images that you specify.
 
 It is useful because the docker image store doesn't grow automatically which can cause you to run out of space.
-> This no longer appears to be true. Recently my image repository grew to over 700GB under docker 17.06. When I deleted almost all of the images using `docker rmi`, it did not shrink. After I ran this tool it reduced the disk usage to about 100GB.
+> This no longer appears to be true. Recently my image repository grew to over 700GB under docker 17.06. When I deleted almost all of the images using `docker rmi`, it did not shrink. After I ran this tool over the update system, it reduced the disk usage to about 100GB.
 
 If you do not specify an image size, it will double the current size.
 
