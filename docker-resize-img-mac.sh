@@ -68,31 +68,47 @@ VERSION
     exit 0
 }
 
-function dockerStop() {
-    # CITATION: https://forums.docker.com/t/restart-docker-from-command-line/9420/8
-    test -z "$(docker ps -q 2>/dev/null)" && osascript -e 'quit app "Docker"'
-    if (( $? )) ; then
-        echo -e "\x1B[1;31mERROR\x1B[0;31m: unable to stop docker."
-        echo -e "       This failure can occur if docker containers are running.\x1B[0m"
-        exit 1
+function dockerRunning() {
+    local IMGS=($(docker images -q 2>/dev/null))
+    if (( ${#IMGS[@]} )) ; then
+        return 0
+    else
+        return 1
     fi
-    while docker info >/dev/null 2>&1 ; do
-        echo -n '.'
-        sleep 0.5
-    done
-    echo ''
+}
+
+function dockerStop() {
+    if dockerRunning ; then
+        echo -n "INFO:${LINENO}: Stopping docker."
+        osascript -e 'quit app "Docker"'
+        if (( $? )) ; then
+            echo -e "\x1B[1;31mERROR\x1B[0;31m: unable to stop docker."
+            echo -e "       This failure can occur if docker containers are running.\x1B[0m"
+            exit 1
+        fi
+        while docker info >/dev/null 2>&1 ; do
+            echo -n '.'
+            sleep 0.5
+        done
+        echo ''
+        if dockerRunning ; then
+            echo -e "\x1B[1;31mERROR\x1B[0;31m: unable to stop docker.\x1B[0m"
+            exit 1
+        fi
+    fi
 }
 
 function dockerStart() {
-    docker images >/dev/null 2>&1
-    if (( $? )) ; then
+    if ! dockerRunning ; then
         # docker isn't running, start it
+        echo -n "INFO:${LINENO}: Starting docker."
         open --background -a Docker
         if (( $? )) ; then
             echo -e "\x1B[1;31mERROR\x1B[0;31m: unable to start docker.\x1B[0m"
             exit 1
         fi
     fi
+    # Wait for it to be ready.
     until docker info >/dev/null 2>&1 ; do
         echo -n '.'
         sleep 0.5
@@ -100,16 +116,11 @@ function dockerStart() {
     echo ""
 }
 
-function dockerRunning() {
-    docker images >/dev/null 2>&1
-    return $?
-}
-
 # ================================================================
 # Main
 # ================================================================
 # Grab command line arguments.
-readonly VERSION='0.1.1'
+readonly VERSION='0.1.2'
 SIZE=''
 DOCKER_IMG_FILE="$HOME/Library/Containers/com.docker.docker/Data/com.docker.driver.amd64-linux/Docker.qcow2"
 IMAGES=()
@@ -162,6 +173,7 @@ if [ ! -f $DOCKER_IMG_FILE ] ; then
     DOCKER_IMG_FILE_EXISTS=0
 fi
 
+# Get information about the image.
 if (( DOCKER_IMG_FILE_EXISTS )) ; then
     # Check the image format.
     IMG_FORMAT=$(qemu-img info $DOCKER_IMG_FILE 2>&1 | grep -i 'file format:' | awk '{print $3}')
@@ -170,11 +182,11 @@ if (( DOCKER_IMG_FILE_EXISTS )) ; then
         qemu-img info $DOCKER_IMG_FILE
         exit 1
     fi
-    echo "INFO:${LINENO}: Image format: $IMG_FORMAT"
+    echo "INFO:${LINENO}: Image format: $IMG_FORMAT."
 
     # Get the image size.
     IMG_SIZE=$(qemu-img info $DOCKER_IMG_FILE 2>&1 | grep -i 'virtual size:' | awk -F'(' '{print $2}' | awk '{print $1}')
-    printf "INFO:%d: Image virtual size: %'.f bytes\n" $LINENO $IMG_SIZE
+    printf "INFO:%d: Image virtual size: %'.f bytes.\n" $LINENO $IMG_SIZE
 
     # Set the image size.
     if [[ $SIZE = "" ]] ; then
@@ -184,26 +196,52 @@ if (( DOCKER_IMG_FILE_EXISTS )) ; then
     # Report the new image size.
     if echo "$SIZE" | grep -q '^[0-9]*$' >/dev/null ; then
         # Only commaize if it is a number.
-        printf "INFO:%d: Updated image size: %'.f\n" $LINENO $SIZE
+        printf "INFO:%d: Updated image size: %'.f.\n" $LINENO $SIZE
     else
         # Could commaize here by splitting out the digits
         # portion but it isn't worth it.
-        printf "INFO:%d: Updated image size: %s\n" $LINENO $SIZE
+        printf "INFO:%d: Updated image size: %s.\n" $LINENO $SIZE
     fi
 
     # Make sure that docker is running.
-    if (( dockerRunning )) ; then
-        echo -n "INFO:${LINENO}: Starting docker"
+    if ! dockerRunning ; then
         dockerStart
     fi
+fi
 
+# Make sure that no processes are running.
+# At this point docker should be running.
+if dockerRunning ; then
+    PROCS=($(docker ps -a --format '{{.ID}}'))
+    if (( ${#PROCS[@]} )) ; then
+        echo -e "\x1B[1;31mERROR\x1B[0;31m:${LINENO}: processes are running, please stop them before proceeding.\x1B[0m"
+        exit 1
+    fi
+else
+    echo -e "\x1B[1;31mERROR\x1B[0;31m:${LINENO}: please start docker.\x1B[0m"
+    exit 1
+fi
+
+# Save the images while docker is running.
+if (( DOCKER_IMG_FILE_EXISTS )) ; then
     # This can only be true of the image file exists.
-    echo "INFO:${LINENO}: ${#IMAGES[@]} images specified"
-    if (( ${#IMAGES[@]} > 0 )) ; then
+    n=${#IMAGES[@]}
+    echo "INFO:${LINENO}: $n images specified."
+    if (( n > 0 )) ; then
         # Backup the specified images.
+        i=0
         for IMG in ${IMAGES[@]} ; do
+            (( i++ ))
+            SZ=$(docker inspect $IMG | grep '"Size"' | awk -F: '{print $2}' | awk -F, '{print $1}' | awk '{print $1}')
+            if (( SZ > 999999999 )) ; then
+                SZSTR="$(echo "scale=2 ; $SZ / 1000000000" | bc)GB"
+            elif (( SZ > 999999 )) ; then
+                SZSTR="$(echo "scale=2 ; $SZ / 1000000" | bc)MB"
+            elif (( SZ > 999 )) ; then
+                SZSTR="$(echo "scale=2 ; $SZ / 1000" | bc)KB"
+            fi
             FN=$(echo -n "$IMG" | base64)
-            echo "INFO:${LINENO}:    Saving image $IMG to $FN.tar."
+            echo "INFO:${LINENO}:    Saving image $i of $n: '$IMG' --> '$FN.tar' ($SZSTR)."
             time docker save -o ${FN}.tar ${IMG}
             if (( $? )) ; then
                 echo -e "\x1B[1;31mERROR\x1B[0;31m:${LINENO}: image not found: '$IMG'.\x1B[0m"
@@ -214,8 +252,7 @@ if (( DOCKER_IMG_FILE_EXISTS )) ; then
 fi
 
 # Quit docker.
-if (( dockerRunning )) ; then
-    echo -n "INFO:${LINENO}: Quitting docker"
+if dockerRunning ; then
     dockerStop
 fi
 
@@ -233,15 +270,18 @@ if (( $? )) ; then
 fi
 
 # Restart docker.
-echo -n "INFO:${LINENO}: Restarting docker"
 dockerStart
 
+# Restore the images.
 if (( ${#IMAGES[@]} > 0 )) ; then
     # Re-populate the images.
-    echo "Re-populate the docker images."
+    echo "INFO:${LINENO}: Restore the docker images."
+    n=${#IMAGES[@]}
+    i=0
     for IMG in ${IMAGES[@]} ; do
+        (( i++ ))
         FN=$(echo -n "$IMG" | base64)
-        echo "INFO:${LINENO}:    Saving image $IMG to $FN.tar."
+        echo "INFO:${LINENO}:    Restoring image $i of $n: '$FN.tar' --> '$IMG'."
         time docker load -q -i ${FN}.tar
         if (( $? )) ; then
             echo -e "\x1B[1;32mWARNING\x1B[0;32m:${LINENO}: Docker image not restored: '$FN.tar'.\x1B[0m"
@@ -251,7 +291,6 @@ if (( ${#IMAGES[@]} > 0 )) ; then
     echo "Cleaning up."
     for IMG in ${IMAGES[@]} ; do
         FN=$(echo -n "$IMG" | base64)
-        echo "INFO:${LINENO}:    Deleting $FN.tar."
         rm -f $FN.tar
     done
 fi
