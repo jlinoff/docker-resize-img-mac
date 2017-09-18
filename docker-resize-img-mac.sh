@@ -120,7 +120,7 @@ function dockerStart() {
 # Main
 # ================================================================
 # Grab command line arguments.
-readonly VERSION='0.1.2'
+readonly VERSION='0.2.0'
 SIZE=''
 DOCKER_IMG_FILE="$HOME/Library/Containers/com.docker.docker/Data/com.docker.driver.amd64-linux/Docker.qcow2"
 IMAGES=()
