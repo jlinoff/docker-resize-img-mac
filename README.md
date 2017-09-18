@@ -23,7 +23,7 @@ $ docker-resize-img-mac.sh -s 194G img1 img2 img3
 Here is how I used the tool resize the image repository for all of my images.
 
 ```bash
-$ ./docker-resize-img-mac.sh -s 120G $(docker images --format '{{.Repository}}')
+$ ./docker-resize-img-mac.sh -s 120G $(docker images --format '{{.ID}}')
 ```
 
 After running it, the docker.qcow2 image was reduced signficantly. Apparently there is a lot of wasted space.
