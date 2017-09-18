@@ -14,7 +14,7 @@ function helpme() {
     local bn=$(basename $0)
     echo -e "
 USAGE
-    \x1B[1m$bn [OPTIONS] [IMAGES]\x1B[0m
+    ${B}$bn [OPTIONS] [IMAGES]${R}
 
 DESCRIPTION
     This tool resizes your docker image store on the mac keeping
@@ -29,34 +29,49 @@ DESCRIPTION
     If you do not specify any images, it will delete all of
     the images and resize the container.
 
-OPTION
+OPTIONS
+    -a, --all       Save and restore all images.
+                    This is the same as specifying the following for
+                    the images:
+                    ${B}\$(docker images --format '{{.Repository}}:{{.Tag}}')${R}
+
+    -f FILE, --file FILE
+                    The docker image file.
+                    You should never need to set this.
+                    Default: ${B}$DOCKER_IMG_FILE${R}
+
     -h, --help      This help message.
 
     -s SIZE, --size SIZE
-                    The new image size. It can be larger
-                    or smaller than the current image size.
-                    If it is not specified, then the current
-                    image size is double.
-                    This argument is passed directly to
-                    qemu-img so it follows the syntax defined
-                    for that tool. For example, you can use
-                    100G to specify 100GB.
+                    The new image size. It can be larger or smaller
+                    than the current image size.  If it is not
+                    specified, then the current image size is double.
+
+                    This argument is passed directly to qemu-img so it
+                    follows the syntax defined for that tool. For
+                    example, you can use ${B}100G${R} to specify 100GB.
 
     -V, --version   Print the program version and exit.
 
 EXAMPLE USAGE
     # Example 1: Help
-    \$ \x1B[1m$bn -h\x1B[0m
+    \$ ${B}$bn -h${R}
 
     # Example 2: Version
-    \$ \x1B[1m$bn -V\x1B[0m
+    \$ ${B}$bn -V${R}
 
     # Example 3: Double the size, lose all images.
-    \$ \x1B[1m$bn\x1B[0m
+    \$ ${B}$bn${R}
 
     # Example 4: Make the size 100GB, keep the selected images.
-    \$ \x1B[1mdocker images\x1B[0m  # list the images, determine which ones to keep
-    \$ \x1B[1m$bn -s 100G img1 img2 img3\x1B[0m
+    \$ ${B}docker images${R}  # list the images, determine which ones to keep
+    \$ ${B}$bn -s 100G img1 img2 img3${R}
+
+    # Example 5: Resize all images the old way.
+    \$ ${B}$bn -s 120G \$(docker images --format '{{.Repository}}:{{.Tag}}')${R}
+
+    # Example 6: Resize all images the new way.
+    \$ ${B}$bn -s 120G -a${R}
 
 LICENSE
     Copyright (c) 2017 by Joe Linoff
@@ -82,8 +97,8 @@ function dockerStop() {
         echo -n "INFO:${LINENO}: Stopping docker."
         osascript -e 'quit app "Docker"'
         if (( $? )) ; then
-            echo -e "\x1B[1;31mERROR\x1B[0;31m: unable to stop docker."
-            echo -e "       This failure can occur if docker containers are running.\x1B[0m"
+            echo -e "${RB}ERROR${RN}: unable to stop docker."
+            echo -e "       This failure can occur if docker containers are running.${R}"
             exit 1
         fi
         while docker info >/dev/null 2>&1 ; do
@@ -92,7 +107,7 @@ function dockerStop() {
         done
         echo ''
         if dockerRunning ; then
-            echo -e "\x1B[1;31mERROR\x1B[0;31m: unable to stop docker.\x1B[0m"
+            echo -e "${RB}ERROR${RN}: unable to stop docker.${R}"
             exit 1
         fi
     fi
@@ -104,7 +119,7 @@ function dockerStart() {
         echo -n "INFO:${LINENO}: Starting docker."
         open --background -a Docker
         if (( $? )) ; then
-            echo -e "\x1B[1;31mERROR\x1B[0;31m: unable to start docker.\x1B[0m"
+            echo -e "${RB}ERROR${RN}: unable to start docker.${R}"
             exit 1
         fi
     fi
@@ -120,7 +135,13 @@ function dockerStart() {
 # Main
 # ================================================================
 # Grab command line arguments.
-readonly VERSION='0.2.0'
+readonly VERSION='0.3.0'
+readonly B=$(printf "\x1B[1m")
+readonly R=$(printf "\x1B[0m")
+readonly RB=$(printf "\x1B[1;31m")  # red-bold
+readonly RN=$(printf "\x1B[0;31m")  # red-normal
+readonly GB=$(printf "\x1B[1;32m")  # green-bold
+readonly GN=$(printf "\x1B[0;32m")  # green-normal
 SIZE=''
 DOCKER_IMG_FILE="$HOME/Library/Containers/com.docker.docker/Data/com.docker.driver.amd64-linux/Docker.qcow2"
 IMAGES=()
@@ -128,6 +149,9 @@ while (( $# )) ; do
     arg=$1
     shift
     case "$arg" in
+        -a|--all)
+            IMAGES=($(docker images --format '{{.Repository}}:{{.Tag}}'))
+            ;;
         -f|--file)
             DOCKER_IMG_FILE="$1"
             shift
@@ -146,7 +170,7 @@ while (( $# )) ; do
             exit 0
             ;;
         -*)
-            echo -e "\x1B[1;31mERROR\x1B[0;31m: unrecognized option '$arg'.\x1B[0m"
+            echo -e "${RB}ERROR${RN}: unrecognized option '$arg'.${R}"
             exit 1
             ;;
         *)
@@ -157,7 +181,7 @@ done
 
 # Verify that the qemu-img tool is available.
 if ! qemu-img --version >/dev/null 2>&1 ; then
-    echo -e "\x1B[1;31mERROR\x1B[0;31m:${LINENO}: qemu-img not found.\x1B[0m"
+    echo -e "${RB}ERROR${RN}:${LINENO}: qemu-img not found.${R}"
     echo "       Please install it using brew or macports and try again."
     exit 1
 fi
@@ -166,7 +190,7 @@ fi
 # Note that I use $HOME instead of tilde to avoid expansion issues.
 DOCKER_IMG_FILE_EXISTS=1
 if [ ! -f $DOCKER_IMG_FILE ] ; then
-    echo -e "\x1B[1;32mWARNING\x1B[0;32m:${LINENO}: docker image file not found.\x1B[0m"
+    echo -e "${RB}WARNING${RN}:${LINENO}: docker image file not found.${R}"
     echo "         File: $DOCKER_IMG_FILE"
     echo "         No images can be restored."
     IMAGES=()
@@ -178,7 +202,7 @@ if (( DOCKER_IMG_FILE_EXISTS )) ; then
     # Check the image format.
     IMG_FORMAT=$(qemu-img info $DOCKER_IMG_FILE 2>&1 | grep -i 'file format:' | awk '{print $3}')
     if ! [[ "$IMG_FORMAT" == "qcow2" ]] ; then
-        echo -e "\x1B[1;31mERROR\x1B[0;31m:${LINENO}: qemu-img format not qcow2.\x1B[0m"
+        echo -e "${RB}ERROR${RN}:${LINENO}: qemu-img format not qcow2.${R}"
         qemu-img info $DOCKER_IMG_FILE
         exit 1
     fi
@@ -214,11 +238,11 @@ fi
 if dockerRunning ; then
     PROCS=($(docker ps -a --format '{{.ID}}'))
     if (( ${#PROCS[@]} )) ; then
-        echo -e "\x1B[1;31mERROR\x1B[0;31m:${LINENO}: processes are running, please stop them before proceeding.\x1B[0m"
+        echo -e "${RB}ERROR${RN}:${LINENO}: processes are running, please stop them before proceeding.${R}"
         exit 1
     fi
 else
-    echo -e "\x1B[1;31mERROR\x1B[0;31m:${LINENO}: please start docker.\x1B[0m"
+    echo -e "${RB}ERROR${RN}:${LINENO}: please start docker.${R}"
     exit 1
 fi
 
@@ -232,6 +256,10 @@ if (( DOCKER_IMG_FILE_EXISTS )) ; then
         i=0
         for IMG in ${IMAGES[@]} ; do
             (( i++ ))
+            FN=$(echo -n "$IMG" | base64)
+            echo -n "INFO:${LINENO}:    Saving image $i of $n: '$IMG' --> '$FN.tar' "
+
+            # Get the image size.
             SZ=$(docker inspect $IMG | grep '"Size"' | awk -F: '{print $2}' | awk -F, '{print $1}' | awk '{print $1}')
             if (( SZ > 999999999 )) ; then
                 SZSTR="$(echo "scale=2 ; $SZ / 1000000000" | bc)GB"
@@ -240,11 +268,13 @@ if (( DOCKER_IMG_FILE_EXISTS )) ; then
             elif (( SZ > 999 )) ; then
                 SZSTR="$(echo "scale=2 ; $SZ / 1000" | bc)KB"
             fi
-            FN=$(echo -n "$IMG" | base64)
-            echo "INFO:${LINENO}:    Saving image $i of $n: '$IMG' --> '$FN.tar' ($SZSTR)."
+            echo "($SZSTR)."
+
+            # Now save the image.
+            rm -f ${FN}.tar
             time docker save -o ${FN}.tar ${IMG}
             if (( $? )) ; then
-                echo -e "\x1B[1;31mERROR\x1B[0;31m:${LINENO}: image not found: '$IMG'.\x1B[0m"
+                echo -e "${RB}ERROR${RN}:${LINENO}: image not found: '$IMG'.${R}"
                 exit 1
             fi
         done
@@ -265,7 +295,7 @@ fi
 echo "INFO:${LINENO}: Re-creating the image file."
 time qemu-img create -f qcow2 $DOCKER_IMG_FILE $SIZE
 if (( $? )) ; then
-    echo -e "\x1B[1;31mERROR\x1B[0;31m:${LINENO}: Could not create the docker image file.\x1B[0m"
+    echo -e "${RB}ERROR${RN}:${LINENO}: Could not create the docker image file.${R}"
     exit 1
 fi
 
@@ -284,7 +314,7 @@ if (( ${#IMAGES[@]} > 0 )) ; then
         echo "INFO:${LINENO}:    Restoring image $i of $n: '$FN.tar' --> '$IMG'."
         time docker load -q -i ${FN}.tar
         if (( $? )) ; then
-            echo -e "\x1B[1;32mWARNING\x1B[0;32m:${LINENO}: Docker image not restored: '$FN.tar'.\x1B[0m"
+            echo -e "${RB}WARNING${RN}:${LINENO}: Docker image not restored: '$FN.tar'.${R}"
         fi
     done
 
@@ -295,4 +325,14 @@ if (( ${#IMAGES[@]} > 0 )) ; then
     done
 fi
 
-echo "Done."
+# Now report the summary information.
+echo -e "INFO:${LINENO}: ${GB}Docker images.${R}"
+docker images
+
+echo -e "INFO:${LINENO}: ${GB}Docker image repo info.${R}"
+qemu-img info $DOCKER_IMG_FILE
+
+echo -e "INFO:${LINENO}: ${GB}Docker image repo size.${R}"
+ls -lh $DOCKER_IMG_FILE
+
+echo -e "INFO:${LINENO}: ${GN}Done.${R}"
