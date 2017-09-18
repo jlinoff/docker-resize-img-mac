@@ -69,9 +69,11 @@ VERSION
 }
 
 function dockerStop() {
-    osascript -e 'quit app "Docker"'
+    # CITATION: https://forums.docker.com/t/restart-docker-from-command-line/9420/8
+    test -z "$(docker ps -q 2>/dev/null)" && osascript -e 'quit app "Docker"'
     if (( $? )) ; then
-        echo -e "\x1B[1;31mERROR\x1B[0;31m: unable to stop docker.\x1B[0m"
+        echo -e "\x1B[1;31mERROR\x1B[0;31m: unable to stop docker."
+        echo -e "       This failure can occur if docker containers are running.\x1B[0m"
         exit 1
     fi
     while docker info >/dev/null 2>&1 ; do
@@ -85,7 +87,7 @@ function dockerStart() {
     docker images >/dev/null 2>&1
     if (( $? )) ; then
         # docker isn't running, start it
-        open -a Docker
+        open --background -a Docker
         if (( $? )) ; then
             echo -e "\x1B[1;31mERROR\x1B[0;31m: unable to start docker.\x1B[0m"
             exit 1
@@ -107,7 +109,7 @@ function dockerRunning() {
 # Main
 # ================================================================
 # Grab command line arguments.
-readonly VERSION='0.1.0'
+readonly VERSION='0.1.1'
 SIZE=''
 DOCKER_IMG_FILE="$HOME/Library/Containers/com.docker.docker/Data/com.docker.driver.amd64-linux/Docker.qcow2"
 IMAGES=()
@@ -212,7 +214,6 @@ if (( DOCKER_IMG_FILE_EXISTS )) ; then
 fi
 
 # Quit docker.
-# CITATION: https://blog.mrtrustor.net/post/clean-docker-for-mac (how to stop docker!)
 if (( dockerRunning )) ; then
     echo -n "INFO:${LINENO}: Quitting docker"
     dockerStop
