@@ -50,3 +50,25 @@ Here is how you download it.
 $ git clone https://github.com/jlinoff/docker-resize-img-mac.git
 $ cp docker-resize-img-mac/docker-resize-img-mac.sh ~/bin/
 ```
+
+Here is the script that I used to test it.
+
+```bash
+#!/bin/bash
+#
+# Only for use on a docker system with no images.
+#
+IMGS=($(docker images -q))
+if (( ${#IMGS[@]} )) ; then
+    echo "ERROR: requires an empty docker system to run!"
+    exit 1
+fi
+
+# docker rmi -f $(docker images -q)
+docker pull alpine:latest
+docker pull hello-world
+docker images
+./docker-resize-img-mac.sh -s 120G $(docker images --format '{{.Repository}}:{{.Tag}}')
+docker images
+qemu-img info ~/Library/Containers/com.docker.docker/Data/com.docker.driver.amd64-linux/Docker.qcow2
+```
