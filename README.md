@@ -23,8 +23,7 @@ $ docker-resize-img-mac.sh -s 194G img1 img2 img3
 Here is how I used the tool resize the image repository for all of my images.
 
 ```bash
-$ # Do not use {{.ID}}, you will lose the repository names.
-$ ./docker-resize-img-mac.sh -s 120G $(docker images --format '{{.Repository}}:{{.Tag}}')
+$ ./docker-resize-img-mac.sh -s 120G -a
 ```
 
 After running it, the docker.qcow2 image was reduced signficantly. Apparently there is a lot of wasted space.
@@ -68,7 +67,5 @@ fi
 docker pull alpine:latest
 docker pull hello-world
 docker images
-./docker-resize-img-mac.sh -s 120G $(docker images --format '{{.Repository}}:{{.Tag}}')
-docker images
-qemu-img info ~/Library/Containers/com.docker.docker/Data/com.docker.driver.amd64-linux/Docker.qcow2
+./docker-resize-img-mac.sh -s 120G -a
 ```
