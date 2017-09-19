@@ -59,7 +59,7 @@ Here is the script that I used to test it.
 #
 IMGS=($(docker images -q))
 if (( ${#IMGS[@]} )) ; then
-    echo "ERROR: requires an empty docker system to run!"
+    echo "ERROR: requires an empty docker image repo to run!"
     exit 1
 fi
 
