@@ -14,18 +14,41 @@ If you do not specify any images, it will delete all of the images and resize th
 
 You must have `qemu-img` installed for it to work. The `qemu` tools are available from the homebrew and macports projects.
 
-Here is how you use this tool.
+### Getting help
+Here is how you get help.
 
 ```bash
-$ docker-resize-img-mac.sh -s 194G img1 img2 img3
+$ docker-resize-img-mac.sh -h
 ```
 
-Here is how I used the tool resize the image repository for all of my images.
+### Resize the image repository
+Here is how I used the tool resize the image repository to 120G for all of my images. Note that `<none>` images are lost.
 
 ```bash
 $ ./docker-resize-img-mac.sh -s 120G -a
 ```
 
+Here is an example that resizes the repository and only carries over a few
+specified images. All other images are lost.
+
+```bash
+$ docker-resize-img-mac.sh -s 194G centos:6 centos:7 ubuntu:latest alpine:latest $USER/my-cool-image
+```
+
+### Backing up your image repository (-b)
+Here is how you backup your image repository using this tool.
+
+```bash
+$ docker-resize-img-mac.sh -b -a
+```
+
+The contents are put in `backup/TIMESTAMP` along with a `restore.sh` script that will restore the images.
+
+You can also specify specific images to backup.
+
+> Although this tool was not originally written with backup in mind, this feature has become very useful for guaranteeing that no information is lost.
+
+### How to observe the improvements
 After running it, the docker.qcow2 image was reduced signficantly. Apparently there is a lot of wasted space.
 
 To see the updated image information.
@@ -43,6 +66,7 @@ Format specific information:
     corrupt: false
 ```
 
+### Downloading it
 Here is how you download it.
 
 ```bash
@@ -50,6 +74,7 @@ $ git clone https://github.com/jlinoff/docker-resize-img-mac.git
 $ cp docker-resize-img-mac/docker-resize-img-mac.sh ~/bin/
 ```
 
+### Testing
 Here is the script that I used to test it.
 
 ```bash
