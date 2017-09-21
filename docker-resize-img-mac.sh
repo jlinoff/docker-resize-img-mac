@@ -141,7 +141,7 @@ function dockerStart() {
 # Main
 # ================================================================
 # Grab command line arguments.
-readonly VERSION='0.4.0'
+readonly VERSION='0.4.1'
 readonly B=$(printf "\x1B[1m")
 readonly R=$(printf "\x1B[0m")
 readonly RB=$(printf "\x1B[1;31m")  # red-bold
@@ -253,9 +253,6 @@ if dockerRunning ; then
         echo -e "${RB}ERROR${RN}:${LINENO}: processes are running, please stop them before proceeding.${R}"
         exit 1
     fi
-else
-    echo -e "${RB}ERROR${RN}:${LINENO}: please start docker.${R}"
-    exit 1
 fi
 
 # Save the images while docker is running.
