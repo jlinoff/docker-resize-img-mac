@@ -48,6 +48,8 @@ You can also specify specific images to backup.
 
 > Although this tool was not originally written with backup in mind, this feature has become very useful for guaranteeing that no information is lost.
 
+Added new tool called `docker-backup.sh` to back images in any docker environment that supports bash scripts.
+
 ### How to observe the improvements
 After running it, the docker.qcow2 image was reduced signficantly. Apparently there is a lot of wasted space.
 
