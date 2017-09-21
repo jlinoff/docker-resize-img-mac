@@ -22,7 +22,7 @@ $ docker-resize-img-mac.sh -h
 ```
 
 ### Resize the image repository
-Here is how I used the tool resize the image repository to 120G for all of my images. Note that `<none>` images are lost.
+Here is how I used the tool resize the image repository to 120G and keep _all of my images_ (`-a`), except for the `<none>` images.
 
 ```bash
 $ ./docker-resize-img-mac.sh -s 120G -a
