@@ -61,6 +61,9 @@ OPTIONS
                     This will keep you from losing data if anything
                     goes wrong but it can consume a lot of disk space.
 
+                    It is like combines the backup and resize
+                    operations into one.
+
     -s SIZE, --size SIZE
                     The new image size. It can be larger or smaller
                     than the current image size.  If it is not
@@ -157,7 +160,7 @@ function dockerStart() {
 # Main
 # ================================================================
 # Grab command line arguments.
-readonly VERSION='0.5.0'
+readonly VERSION='0.6.0'
 readonly B=$(printf "\x1B[1m")
 readonly R=$(printf "\x1B[0m")
 readonly RB=$(printf "\x1B[1;31m")  # red-bold
