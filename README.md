@@ -74,6 +74,8 @@ Here is how you download it.
 ```bash
 $ git clone https://github.com/jlinoff/docker-resize-img-mac.git
 $ cp docker-resize-img-mac/docker-resize-img-mac.sh ~/bin/
+$ cp docker-resize-img-mac/docker-backup.sh ~/bin/
+$ chmod 0755 ~/bin/docker-resize-img-mac/docker-resize-img-mac.sh ~/bin/docker-backup.sh
 ```
 
 ### Testing
