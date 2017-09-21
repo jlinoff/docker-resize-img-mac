@@ -77,24 +77,3 @@ $ cp docker-resize-img-mac/docker-resize-img-mac.sh ~/bin/
 $ cp docker-resize-img-mac/docker-backup.sh ~/bin/
 $ chmod 0755 ~/bin/docker-resize-img-mac/docker-resize-img-mac.sh ~/bin/docker-backup.sh
 ```
-
-### Testing
-Here is the script that I used to test it.
-
-```bash
-#!/bin/bash
-#
-# Only for use on a docker system with no images.
-#
-IMGS=($(docker images -q))
-if (( ${#IMGS[@]} )) ; then
-    echo "ERROR: requires an empty docker image repo to run!"
-    exit 1
-fi
-
-# docker rmi -f $(docker images -q)
-docker pull alpine:latest
-docker pull hello-world
-docker images
-./docker-resize-img-mac.sh -s 120G -a
-```
