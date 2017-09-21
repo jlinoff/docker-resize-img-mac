@@ -42,6 +42,12 @@ OPTIONS
 
     -h, --help      This help message.
 
+    -k, --keep      Keep the saved images.
+                    Normally the images are deleted but this option
+                    keeps them.
+                    Be careful, the images can consume a lot of
+                    disk space.
+
     -s SIZE, --size SIZE
                     The new image size. It can be larger or smaller
                     than the current image size.  If it is not
@@ -135,16 +141,19 @@ function dockerStart() {
 # Main
 # ================================================================
 # Grab command line arguments.
-readonly VERSION='0.3.0'
+readonly VERSION='0.4.0'
 readonly B=$(printf "\x1B[1m")
 readonly R=$(printf "\x1B[0m")
 readonly RB=$(printf "\x1B[1;31m")  # red-bold
 readonly RN=$(printf "\x1B[0;31m")  # red-normal
 readonly GB=$(printf "\x1B[1;32m")  # green-bold
 readonly GN=$(printf "\x1B[0;32m")  # green-normal
+
 SIZE=''
 DOCKER_IMG_FILE="$HOME/Library/Containers/com.docker.docker/Data/com.docker.driver.amd64-linux/Docker.qcow2"
 IMAGES=()
+KEEP=0
+
 while (( $# )) ; do
     arg=$1
     shift
@@ -158,6 +167,9 @@ while (( $# )) ; do
             ;;
         -h|--help)
             helpme
+            ;;
+        -k|--keep)
+            KEEP=1
             ;;
         -s|--size)
             # Passed directly to qemu-img.
@@ -318,11 +330,14 @@ if (( ${#IMAGES[@]} > 0 )) ; then
         fi
     done
 
-    echo "Cleaning up."
-    for IMG in ${IMAGES[@]} ; do
-        FN=$(echo -n "$IMG" | base64)
-        rm -f $FN.tar
-    done
+    # Do not delete the images if the user specified -k.
+    if (( ! KEEP )) ; then
+        echo "INFO:${LINENO}: Cleaning up."
+        for IMG in ${IMAGES[@]} ; do
+            FN=$(echo -n "$IMG" | base64)
+            rm -f $FN.tar
+        done
+    fi
 fi
 
 # Now report the summary information.
